@@ -53,6 +53,7 @@ flags.DEFINE_bool("init_global_vars", default=False, help="If true, init all glo
 
 flags.DEFINE_bool("lower_case", default=False, help="Enable lower case nor not.")
 flags.DEFINE_integer("num_turn", default=2, help="Number of turns.")
+flags.DEFINE_integer("num_negative", default=5, help="Number of negative samples.")
 flags.DEFINE_integer("doc_stride", default=128, help="Doc stride")
 flags.DEFINE_integer("max_seq_length", default=512, help="Max sequence length")
 flags.DEFINE_integer("max_query_length", default=128, help="Max query length")
@@ -1225,6 +1226,15 @@ class XLNetModelBuilder(object):
         
         return loss
     
+    def _negative_sampling(self,
+                           rationale_start_position,
+                           rationale_end_position,
+                           start_position,
+                           end_position,
+                           num_negative):
+        """Sample negative start/end postions"""
+        return []
+    
     def _create_model(self,
                       is_training,
                       input_ids,
@@ -1232,10 +1242,10 @@ class XLNetModelBuilder(object):
                       p_mask,
                       segment_ids,
                       cls_index,
-                      rationale_start_positions=None,
-                      rationale_end_positions=None,
-                      start_positions=None,
-                      end_positions=None,
+                      rationale_start_position=None,
+                      rationale_end_position=None,
+                      start_position=None,
+                      end_position=None,
                       is_unk=None,
                       is_yes=None,
                       is_no=None,
@@ -1275,7 +1285,7 @@ class XLNetModelBuilder(object):
             with tf.variable_scope("end", reuse=tf.AUTO_REUSE):
                 if is_training:
                     # During training, compute the end logits based on the ground truth of the start position
-                    start_index = self._generate_onehot_label(tf.expand_dims(start_positions, axis=-1), seq_len)         # [b] --> [b,1,l]
+                    start_index = self._generate_onehot_label(tf.expand_dims(start_position, axis=-1), seq_len)          # [b] --> [b,1,l]
                     feat_result = tf.matmul(start_index, output_result)                                     # [b,1,l], [b,l,h] --> [b,1,h]
                     feat_result = tf.tile(feat_result, multiples=[1,seq_len,1])                                      # [b,1,h] --> [b,l,h]
                     
@@ -1399,13 +1409,30 @@ class XLNetModelBuilder(object):
             with tf.variable_scope("loss", reuse=tf.AUTO_REUSE):
                 loss = tf.constant(0.0, dtype=tf.float32)
                 if is_training:
-                    start_label = start_positions                                                                                    # [b]
+                    start_label = start_position                                                                                     # [b]
                     start_label_mask = tf.reduce_max(1 - p_mask, axis=-1)                                                  # [b,l] --> [b]
                     start_loss = self._compute_loss(start_label, start_label_mask, start_result, start_result_mask)                  # [b]
-                    end_label = end_positions                                                                                        # [b]
+                    end_label = end_position                                                                                         # [b]
                     end_label_mask = tf.reduce_max(1 - p_mask, axis=-1)                                                    # [b,l] --> [b]
                     end_loss = self._compute_loss(end_label, end_label_mask, end_result, end_result_mask)                            # [b]
                     loss += tf.reduce_mean(start_loss + end_loss)
+                    
+                    negative_loss = tf.constant(0.0, dtype=tf.float32)
+                    negative_positions = self._negative_sampling(rationale_start_position,
+                        rationale_end_position, start_position, end_position, FLAGS.num_negative)
+                    for negative_start_position, negative_end_position in negative_positions:
+                        negative_start_label = negative_start_position
+                        negative_start_label_mask = tf.reduce_max(1 - p_mask, axis=-1)
+                        negative_start_loss = self._compute_loss(negative_start_label,
+                            negative_start_label_mask, start_result, start_result_mask)
+                        negative_end_label = negative_end_position
+                        negative_end_label_mask = tf.reduce_max(1 - p_mask, axis=-1)
+                        negative_end_loss = self._compute_loss(negative_end_label,
+                            negative_end_label_mask, end_result, end_result_mask)
+                        negative_loss += tf.reduce_mean(negative_start_loss + negative_end_loss)
+                    
+                    negative_loss /= FLAGS.num_negative
+                    loss -= negative_loss
                     
                     unk_label = is_unk                                                                                               # [b]
                     unk_label_mask = tf.reduce_max(1 - p_mask, axis=-1)                                                    # [b,l] --> [b]
