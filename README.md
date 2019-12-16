@@ -137,8 +137,8 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python run_quac.py \
 
 |     Model     | Train Data | # Train Steps | Batch Size | Max Length | Max Query Len | Learning Rate | Overall F1 |  HEQQ  |  HEQD  |
 |:-------------:|:----------:|:-------------:|:----------:|:----------:|:-------------:|:-------------:|:----------:|:------:|:------:|
-|   XLNet-base  |  QuAC 0.2  |     8,000     |     48     |    512     |      128      |      3e-5     |    xx.x    |  xx.x  |  xx.x  |
-|   XLNet-large |  QuAC 0.2  |     8,000     |     48     |    512     |      128      |      3e-5     |    xx.x    |  xx.x  |  xx.x  |
+|   XLNet-base  |  QuAC 0.2  |     8,000     |     48     |    512     |      128      |      3e-5     |    66.4    |  62.6  |   6.8  |
+|   XLNet-large |  QuAC 0.2  |     8,000     |     48     |    512     |      128      |      3e-5     |    71.5    |  68.0  |  11.1  |
 
 <p><i>Table 3: The dev set performance of XLNet model finetuned on QuAC v0.2 task</i></p>
 
