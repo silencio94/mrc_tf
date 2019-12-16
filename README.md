@@ -126,8 +126,8 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python run_quac.py \
 
 |     Model     | Train Data | # Train Steps | Batch Size | Max Length | Learning Rate |    EM    |    F1    |
 |:-------------:|:----------:|:-------------:|:----------:|:----------:|:-------------:|:--------:|:--------:|
-|   XLNet-base  |  CoQA 1.0  |     8,000     |     48     |    512     |      3e-5     |   xx.x   |   xx.x   |
-|   XLNet-large |  CoQA 1.0  |     8,000     |     48     |    512     |      3e-5     |   xx.x   |   xx.x   |
+|   XLNet-base  |  CoQA 1.0  |     8,000     |     48     |    512     |      3e-5     |   76.4   |   84.4   |
+|   XLNet-large |  CoQA 1.0  |     8,000     |     48     |    512     |      3e-5     |   81.8   |   89.4   |
 
 <p><i>Table 3: The dev set performance of XLNet model finetuned on CoQA v1.0 task</i></p>
 
